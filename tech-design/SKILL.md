@@ -1,18 +1,36 @@
 ---
 name: tech-design
-description: Draft technical design documents (技术文档) in this engineering team's established style — background, implementation broken out by DB/API/edge-case, and a closing 上线单 rollout checklist, with heavy inline-commented code blocks. Use when asked to write a tech design doc, 技术文档, 技术方案, 技术设计文档, or "write up the technical doc for this feature".
+description: Draft concise technical design documents (技术文档) in this engineering team's established style — background, implementation broken out by DB/API/edge-case, and a closing 上线单 rollout checklist with focused schema and API examples. Use when asked to write a tech design doc, 技术文档, 技术方案, 技术设计文档, or "write up the technical doc for this feature".
 ---
 
 # Tech Design Doc (技术文档)
 
-Write engineer-to-engineer technical design docs the way this team actually writes them: terse,
-code-first, organized by implementation area rather than narrative, and ending in a checklist an
-on-call engineer can execute without re-reading the doc.
+Write engineer-to-engineer technical design docs for internal discussion: concise, code-first,
+organized by implementation area rather than narrative, and ending in a checklist an on-call
+engineer can execute without re-reading the doc. This is a working design shared between teammates,
+not a formal technical manual.
 
 **Write the document itself in Chinese** — headings, prose, inline comments, everything except
 code identifiers and standard technical terms. This SKILL.md is written in English for whoever
 maintains the skill; that's a documentation-language choice, not a signal about the output. Only
 switch the output to English if the user explicitly asks for it.
+
+Use the language engineers naturally use with each other. Prefer direct statements such as
+`这里复用现有的计费逻辑，只新增价格区间的匹配` over stiff explanatory prose. Avoid translationese,
+especially long sentences built around `通过……从而……以实现……`, and avoid internet-industry
+buzzwords such as `赋能`, `抓手`, `闭环`, `沉淀`, or `拉通` when a concrete verb says the same thing.
+Technical terms that are normal and precise in the codebase are fine; the goal is natural language,
+not forced colloquialism.
+
+Write the resulting design, not the conversation or reasoning process that produced it. Review
+comments, preference changes, and ordinary implementation revisions should be folded into the
+current design without narrating the discarded version. Avoid sentences shaped like
+`不再使用旧方案 X，改为 Y` when the only reason was preference; state `使用 Y` and move on.
+
+For a feature of ordinary complexity, target a document that an engineer can read end to end in
+about 12 minutes. This is a readability budget, not permission to omit behavior that affects
+correctness. Keep the shortest explanation that makes the schema, API contract, core flow, edge
+cases, and rollout operations unambiguous.
 
 ## Usage
 
@@ -25,6 +43,25 @@ switch the output to English if the user explicitly asks for it.
 - No argument → ask what feature this doc is for, and whether there's a PRD to link, before drafting.
 - If the conversation already established what's being built (a plan, a prior message, an open PRD),
   that context takes precedence over asking again.
+
+## Unresolved decisions
+
+Before committing to a design, check whether any material choice is still open and has not already
+been discussed. If two or more reasonable options would lead to meaningfully different behavior,
+data models, API contracts, compatibility constraints, scope, or rollout plans, ask the user for
+their preference instead of silently choosing one.
+
+Prefer an available structured ask-user/question tool. Keep the interruption small: ask only the
+decision needed now, offer 2-3 mutually exclusive options, put the recommended option first, and
+state each option's practical impact in one sentence. If no such tool is available, ask one concise
+direct question. Do not put the unanswered questionnaire or the process of choosing into the
+technical document.
+
+Do not ask about facts that can be resolved from the codebase or requirements, choices with one
+clearly correct engineering answer, or minor reversible details that do not affect the design. For
+those, use the simplest reasonable option and document only the result. If a material preference
+cannot be obtained and guessing would substantially change the design, leave a concise owner-specific
+`【TODO】` instead of inventing a preference.
 
 ## Document skeleton
 
@@ -58,14 +95,20 @@ Only `背景`, `实现`, and `上线单` are mandatory top-level (`##`) sections
 under `实现` is organized **by implementation area** (DB → backend API → business logic → edge
 cases → display layer), not chronologically and not by "what I did first."
 
-**Number every heading with full outline numbering**, dotted to the heading's depth. The three
-top-level (`##`) sections are `1. 背景`, `2. 实现`, `3. 上线单` — fixed, in that order, always these
-three numbers since each appears exactly once. Everything nested under `实现` continues the outline
-from `2`: each `###` subsystem/module is `2.1`, `2.2`, `2.3`, ... (business-logic, edge-case, and
-risk-analysis sections count as modules too, so they keep taking the next number in the same
-sequence), and each `####` under a module extends its parent by one more segment — `2.1.1`, `2.1.2`
-under module `2.1`, then `2.2.1` under module `2.2`, and so on. If a submodule needs its own
-breakdown, go one level deeper the same way (`2.1.1.1`).
+Use one full outline-numbering system throughout the document. The three top-level sections are
+logically `1. 背景`, `2. 实现`, and `3. 上线单`, in that order. Everything nested under `实现`
+continues from `2`: subsystem/module sections are `2.1`, `2.2`, `2.3`, and their children are
+`2.1.1`, `2.1.2`, and so on.
+
+How those numbers are represented depends on the output target:
+
+- In Markdown or plain-text output, include the outline number in the heading text as shown in the
+  skeleton.
+- When creating or updating a Lark document, use `lark-doc`'s native structured numbering blocks:
+  nested `<ol>` elements with `<li seq="auto">`. Do not fake the sequence by writing the number into
+  a heading such as `<h3>3.5</h3>` or `<h3>3.5 标题</h3>`; that produces ordinary heading text rather
+  than Lark's structured sequence styling. Keep the section nesting in the list structure so Lark
+  owns the numbering and continuation behavior.
 
 ## Section-by-section rules
 
@@ -92,6 +135,12 @@ subsections that follow are where those bullets get proven out in schema and API
 
 Then break into `###` subsections per subsystem/module, each optionally split further into `####`
 subsections for DB vs. API vs. validation. Use these recurring subsection shapes as needed:
+
+- **Diagrams** — add a Mermaid diagram only when it makes an architecture, data flow, state change,
+  or multi-step interaction materially easier to discuss than prose. Keep it small and label nodes
+  with concrete system/module names. Do not add a diagram as decoration or repeat a sequence already
+  clear from a short list. In Lark, use a Mermaid whiteboard block through `lark-doc` rather than
+  pasting Mermaid source as a normal code block.
 
 - **New entities/tables** — a sentence of *why this exists* before the schema, e.g.
   `为了给各个租户创建“XX类”订单，需要一个新的产品规格...`. Don't let a `CREATE TABLE`/`ALTER TABLE`
@@ -158,17 +207,19 @@ subsections for DB vs. API vs. validation. Use these recurring subsection shapes
   to the thing it's scoping, with a parenthetical prefix — `（本期不做）`/`（本期不实现）` before a
   heading or bullet — so the reader never has to guess whether something is planned or already
   excluded.
-- **Superseded design decisions** — don't delete them, strike them through with `~~...~~` (keep
-  the rejected SQL/JSON alternative visible below the strikethrough line) so the doc preserves *why*
-  the current design won, not just what it is. When there were genuinely multiple options on the
-  table, label them explicitly — `方案一: ...` / `方案二: ...` — strike the rejected ones, and if the
-  final call is a deliberate compromise rather than a clean win, say so plainly
-  (`本期为了把相关工作量控制到最小，采用折中方案：`) followed by the reasoning as bullets. Naming the
-  compromise as a compromise is more useful to a future reader than presenting it as the obviously
-  correct design.
+- **Design decisions and discarded alternatives** — default to the final design only. Do not preserve
+  review history, the author's thought process, or superseded SQL/JSON with strikethrough. Pure
+  preference changes need no explanation. Include alternatives only when the team repeatedly weighed
+  material trade-offs and the reason for the final choice will matter to implementation or future
+  maintenance. In that case, summarize the viable options, decisive trade-offs, and final choice in
+  the smallest useful form; do not replay the chronological discussion.
+
+Do not add generic sections such as `测试建议`, `测试方案`, `验收建议`, or a standard test-case list.
+Normal cases are covered by the regular development and test process. Keep only validation rules,
+compatibility constraints, and exceptional failure handling that directly affect the design itself.
 
 ### 上线单 (Rollout checklist) — always last
-Two parts:
+The rollout checklist contains executable operations, not a second testing plan. It has two parts:
 1. The **final, consolidated migration** — copy the authoritative `ALTER TABLE`/`CREATE TABLE`
    statements from `实现` again here in full, and turn every config-manifest bullet list
    (`新增一个<配置对象>：...`) from `实现` into the literal `INSERT` statement or concrete admin-panel
@@ -185,9 +236,18 @@ Two parts:
    ```
    Coarse-grained on purpose — this is a run order, not a task breakdown.
 
+Do not add routine verification steps such as checking normal API responses, UI behavior, logs,
+metrics, or regression results. Those belong to normal testing. Include a brief verification step
+only when the rollout has an unusually easy-to-miss failure mode that could leave production in a
+bad partial state; say exactly what to check and keep it to one line.
+
 ## Prose micro-conventions
-- Short sentences, subjects frequently dropped — write like an engineer leaving notes for a
-  teammate, not documentation prose.
+- Short sentences, subjects frequently dropped — write like an engineer discussing the change with
+  teammates, not a manual, press release, or translated specification. Read every sentence once for
+  translationese and buzzwords; replace abstract nouns with the concrete component and action.
+- Prefer one precise statement over setup, recap, or repeated rationale. Remove details already clear
+  from the PRD, code sample, diagram, or another section. Before delivery, do a compression pass and
+  cut anything that does not change implementation, review decisions, or rollout operations.
 - Table/column/field names and API paths: inline code (`` `pricing_tier` ``) or bare literal
   text at the start of a line, never quoted in prose.
 - No em-dashes. Use Chinese full-width punctuation (，。；：) naturally in Chinese sentences.
@@ -202,5 +262,6 @@ Two parts:
 
 ## Publishing to Lark
 If the user wants the doc created or updated in Feishu/Lark, hand off to the `lark-doc` skill and
-follow its XML authoring rules (`lark-doc-xml.md`) rather than emitting raw Markdown — in
-particular, use a `<cite>` block for the PRD link at the top rather than a plain hyperlink.
+follow its XML authoring rules (`lark-doc-xml.md`) rather than emitting raw Markdown. In particular,
+use a `<cite>` block for the PRD link at the top, native nested `<ol><li seq="auto">` blocks for the
+outline sequence, and `<whiteboard type="mermaid">` when a Mermaid diagram is useful.
