@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CodexBridgeResult",
+  "type": "object",
+  "required": [
+    "bridge_status",
+    "bridge_session_id",
+    "codex_thread_id",
+    "workspace",
+    "turn",
+    "exit_code",
+    "timed_out",
+    "duration_seconds",
+    "final_message"
+  ],
+  "properties": {
+    "bridge_status": {
+      "type": "string",
+      "enum": ["completed", "failed"]
+    },
+    "bridge_session_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "codex_thread_id": {
+      "type": "string"
+    },
+    "forked_from": {
+      "type": "string"
+    },
+    "workspace": {
+      "type": "string"
+    },
+    "turn": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "exit_code": {
+      "type": "integer"
+    },
+    "timed_out": {
+      "type": "boolean"
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "token_usage": {
+      "type": ["object", "null"],
+      "properties": {
+        "input_tokens": { "type": ["integer", "null"] },
+        "cached_input_tokens": { "type": ["integer", "null"] },
+        "cache_write_input_tokens": { "type": ["integer", "null"] },
+        "output_tokens": { "type": ["integer", "null"] },
+        "reasoning_output_tokens": { "type": ["integer", "null"] }
+      }
+    },
+    "final_message": {
+      "type": "string"
+    },
+    "error": {
+      "type": ["string", "null"]
+    }
+  }
+}
