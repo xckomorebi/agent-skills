@@ -45,6 +45,11 @@ The bridge uses `thread/name/set` before `turn/start` to persist the `[codex-bri
 
 `resume --title <TITLE>` renames the existing thread with the same prefix. `resume` without `--title` keeps its current name, so older sessions can be tagged by resuming with an explicit title. If the naming request fails or exceeds its five-second timeout, the bridge emits a warning on standard error and proceeds with the turn.
 
+### Agent-session marker and language
+
+- The first turn of every `start` session is automatically prefixed with a `[codex-bridge agent session]` marker line. It tells Codex the thread was started programmatically by an AI agent (not a human) and asks it to reply in English. Codex recognizes this pattern via `~/.codex/AGENTS.md`, which declares any thread opening with this marker an agent-to-agent session. The marker is stored as part of turn 1's prompt in `session.json`.
+- All prompts sent through the bridge must be written in English, regardless of the language of the surrounding user conversation; Codex replies are likewise expected in English.
+
 ---
 
 ## 3. Delegation Prompt Template

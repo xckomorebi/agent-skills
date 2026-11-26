@@ -23,6 +23,15 @@ TITLE_TAG = "[codex-bridge]"
 TITLE_BODY_LIMIT = 60
 UNKNOWN_THREAD_ID = "unknown"
 
+# Prepended to the first turn of every new session so Codex (and a human browsing
+# the thread later) can tell it is agent-to-agent traffic, not a human prompt.
+# ~/.codex/AGENTS.md documents this marker for Codex.
+AGENT_SESSION_MARKER = (
+    "[codex-bridge agent session] This thread was started programmatically by an AI agent "
+    "via codex-bridge, not by a human. Treat the entire session as agent-to-agent "
+    "communication and reply in English."
+)
+
 
 class BridgeInputError(ValueError):
     """An invalid command input or unusable session selector."""
@@ -188,6 +197,7 @@ def save_session(data: dict):
 
 def cmd_start(args):
     prompt = read_prompt(args)
+    prompt = f"{AGENT_SESSION_MARKER}\n\n{prompt}"
     ensure_dirs()
     workspace = os.path.abspath(args.workspace or os.getcwd())
 

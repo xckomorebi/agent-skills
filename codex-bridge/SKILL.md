@@ -13,6 +13,12 @@ Turns run through `codex app-server --stdio`, the protocol the Codex desktop app
 
 The bridge sets the name of every new session and fork with the `[codex-bridge]` prefix. This is the name used in Codex Desktop and Codex thread listings. By default, the title comes from a short excerpt of the prompt. Use `--title` to supply a specific name.
 
+The first turn of every `start` session is prefixed with an `[codex-bridge agent session]` marker line telling Codex the thread was started programmatically by an agent. Codex recognizes this marker via `~/.codex/AGENTS.md` and treats the whole session as agent-to-agent communication.
+
+## Language Preference
+
+All communication with Codex must be in English. Write every prompt in English, even when the surrounding conversation with the user is in another language. The bridge's session marker also instructs Codex to reply in English, and `~/.codex/AGENTS.md` reinforces this for agent sessions.
+
 ## When to Use
 
 - When you want to delegate a complex coding, refactoring, code review, or exploratory task to Codex.
